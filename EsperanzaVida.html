@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Esperanza de Vida</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --border: #2a2d3e;
+      --accent: #6c63ff;
+      --accent2: #ff6584;
+      --green: #43e97b;
+      --yellow: #f9ca24;
+      --red: #e74c3c;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --radius: 12px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      padding: 24px 16px 60px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    header h1 {
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    header p {
+      color: var(--muted);
+      margin-top: 8px;
+      font-size: 0.95rem;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card h2 .icon { font-size: 1.1rem; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+    }
+
+    input[type="number"], select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      width: 100%;
+      transition: border-color 0.2s;
+      appearance: none;
+    }
+    input[type="number"]:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .slider-wrap { display: flex; flex-direction: column; gap: 8px; }
+    .slider-row { display: flex; align-items: center; gap: 12px; }
+    input[type="range"] {
+      -webkit-appearance: none;
+      flex: 1;
+      height: 5px;
+      background: var(--border);
+      border-radius: 99px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      border: 2px solid var(--bg);
+    }
+    .slider-val {
+      min-width: 36px;
+      text-align: right;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .radio-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .radio-group label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      color: var(--text);
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .radio-group input[type="radio"] { display: none; }
+    .radio-group input[type="radio"]:checked + span {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .radio-group label:has(input:checked) {
+      border-color: var(--accent);
+      background: rgba(108,99,255,0.1);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--accent), #9c95ff);
+      color: #fff;
+      transition: opacity 0.2s, transform 0.1s;
+      letter-spacing: 0.03em;
+    }
+    .btn:hover { opacity: 0.88; }
+    .btn:active { transform: scale(0.98); }
+
+    /* ── RESULTADO ── */
+    #resultado { display: none; }
+
+    .result-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .age-display {
+      font-size: clamp(3rem, 10vw, 5rem);
+      font-weight: 800;
+      line-height: 1;
+    }
+    .age-display span { font-size: 1.5rem; font-weight: 400; color: var(--muted); }
+    .result-sub { color: var(--muted); margin-top: 6px; font-size: 0.9rem; }
+
+    .bars-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    @media (max-width: 520px) { .bars-grid { grid-template-columns: 1fr; } }
+
+    .factor-bar { display: flex; flex-direction: column; gap: 6px; }
+    .factor-bar .label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+    }
+    .factor-bar .label-row span:last-child {
+      font-weight: 700;
+    }
+    .bar-bg {
+      height: 8px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.8s ease;
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .legend span { display: flex; align-items: center; gap: 5px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    .tip-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .tip {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.88rem;
+      line-height: 1.4;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border-left: 3px solid;
+    }
+    .tip.good  { border-color: var(--green); background: rgba(67,233,123,0.06); }
+    .tip.warn  { border-color: var(--yellow); background: rgba(249,202,36,0.06); }
+    .tip.bad   { border-color: var(--red); background: rgba(231,76,60,0.06); }
+    .tip .tip-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+    .disclaimer {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Calculadora de Esperanza de Vida</h1>
+  <p>Estimación personalizada basada en factores de salud y estilo de vida</p>
+</header>
+
+<div class="container">
+
+  <!-- DATOS BÁSICOS -->
+  <div class="card">
+    <h2><span class="icon">👤</span> Datos básicos</h2>
+    <div class="grid">
+      <div class="field">
+        <label>Edad actual (años)</label>
+        <input type="number" id="edad" min="10" max="100" value="35">
+      </div>
+      <div class="field">
+        <label>Sexo biológico</label>
+        <select id="sexo">
+          <option value="m">Masculino</option>
+          <option value="f">Femenino</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>País / Región</label>
+        <select id="pais">
+          <option value="78">España</option>
+          <option value="77">México</option>
+          <option value="77">Argentina</option>
+          <option value="76">Colombia</option>
+          <option value="76">Chile</option>
+          <option value="77">Perú</option>
+          <option value="76">Venezuela</option>
+          <option value="75">Bolivia</option>
+          <option value="78">Italia</option>
+          <option value="79">Japón</option>
+          <option value="78">Francia</option>
+          <option value="77">Alemania</option>
+          <option value="79">Suiza</option>
+          <option value="77">Reino Unido</option>
+          <option value="76">EE.UU.</option>
+          <option value="75">Mundo (media)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Nivel educativo</label>
+        <select id="educacion">
+          <option value="-2">Sin estudios</option>
+          <option value="-1">Primaria</option>
+          <option value="0" selected>Secundaria</option>
+          <option value="1">Universidad</option>
+          <option value="2">Posgrado</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANTROPOMETRÍA -->
+  <div class="card">
+    <h2><span class="icon">⚖️</span> Medidas corporales</h2>
+    <div class="grid">
+      <div class="field">
+        <label>Peso (kg)</label>
+        <input type="number" id="peso" min="30" max="250" value="70">
+      </div>
+      <div class="field">
+        <label>Altura (cm)</label>
+        <input type="number" id="altura" min="100" max="220" value="170">
+      </div>
+    </div>
+  </div>
+
+  <!-- HÁBITOS -->
+  <div class="card">
+    <h2><span class="icon">🏃</span> Hábitos y estilo de vida</h2>
+    <div class="grid">
+
+      <div class="field full">
+        <label>Tabaco</label>
+        <div class="radio-group">
+          <label><input type="radio" name="tabaco" value="0" checked><span>Nunca fumé</span></label>
+          <label><input type="radio" name="tabaco" value="1"><span>Ex-fumador</span></label>
+          <label><input type="radio" name="tabaco" value="2"><span>Fumador ocasional</span></label>
+          <label><input type="radio" name="tabaco" value="3"><span>Fumador habitual</span></label>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Alcohol</label>
+        <div class="radio-group">
+          <label><input type="radio" name="alcohol" value="0" checked><span>No bebo</span></label>
+          <label><input type="radio" name="alcohol" value="1"><span>Ocasional</span></label>
+          <label><input type="radio" name="alcohol" value="2"><span>Moderado</span></label>
+          <label><input type="radio" name="alcohol" value="3"><span>Frecuente / excesivo</span></label>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Actividad física — <em id="lbl-ejercicio">moderada</em></label>
+        <div class="slider-wrap">
+          <div class="slider-row">
+            <input type="range" id="ejercicio" min="0" max="4" step="1" value="2">
+            <span class="slider-val" id="val-ejercicio">2</span>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.74rem;color:var(--muted);margin-top:4px">
+          <span>Sedentario</span><span>Activo diario</span>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Calidad de la dieta — <em id="lbl-dieta">media</em></label>
+        <div class="slider-wrap">
+          <div class="slider-row">
+            <input type="range" id="dieta" min="0" max="4" step="1" value="2">
+            <span class="slider-val" id="val-dieta">2</span>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.74rem;color:var(--muted);margin-top:4px">
+          <span>Muy mala</span><span>Excelente</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Horas de sueño por noche</label>
+        <select id="sueno">
+          <option value="-2">Menos de 5 h</option>
+          <option value="-1">5 – 6 h</option>
+          <option value="1" selected>7 – 8 h</option>
+          <option value="-1">9 o más h</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Nivel de estrés crónico</label>
+        <select id="estres">
+          <option value="1">Bajo</option>
+          <option value="0" selected>Moderado</option>
+          <option value="-1">Alto</option>
+          <option value="-2">Muy alto / burnout</option>
+        </select>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SALUD -->
+  <div class="card">
+    <h2><span class="icon">🏥</span> Estado de salud</h2>
+    <div class="grid">
+
+      <div class="field full">
+        <label>Presión arterial</label>
+        <div class="radio-group">
+          <label><input type="radio" name="presion" value="1" checked><span>Normal</span></label>
+          <label><input type="radio" name="presion" value="0"><span>Elevada / prehipertensión</span></label>
+          <label><input type="radio" name="presion" value="-2"><span>Hipertensión</span></label>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Diabetes</label>
+        <div class="radio-group">
+          <label><input type="radio" name="diabetes" value="0" checked><span>No</span></label>
+          <label><input type="radio" name="diabetes" value="-1"><span>Prediabetes</span></label>
+          <label><input type="radio" name="diabetes" value="-3"><span>Tipo 2</span></label>
+          <label><input type="radio" name="diabetes" value="-4"><span>Tipo 1</span></label>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Antecedentes familiares de enfermedad cardiovascular antes de los 60</label>
+        <div class="radio-group">
+          <label><input type="radio" name="cardio" value="0" checked><span>No</span></label>
+          <label><input type="radio" name="cardio" value="-2"><span>Sí</span></label>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Antecedentes familiares de cáncer hereditario</label>
+        <div class="radio-group">
+          <label><input type="radio" name="cancer" value="0" checked><span>No</span></label>
+          <label><input type="radio" name="cancer" value="-1"><span>Sí</span></label>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Relaciones sociales y vínculos afectivos</label>
+        <div class="radio-group">
+          <label><input type="radio" name="social" value="-1"><span>Aislamiento</span></label>
+          <label><input type="radio" name="social" value="0" checked><span>Moderados</span></label>
+          <label><input type="radio" name="social" value="1"><span>Fuertes</span></label>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <button class="btn" onclick="calcular()">Calcular mi esperanza de vida</button>
+
+  <!-- RESULTADO -->
+  <div class="card" id="resultado">
+    <div class="result-header">
+      <div class="age-display" id="disp-edad">—</div>
+      <div class="result-sub">Esperanza de vida estimada · años vividos en total</div>
+      <div id="disp-anos-restantes" style="margin-top:10px;font-size:1rem;color:var(--muted)"></div>
+    </div>
+
+    <div class="bars-grid" id="bars"></div>
+
+    <div class="legend" style="margin-top:16px">
+      <span><span class="dot" style="background:var(--green)"></span> Beneficioso</span>
+      <span><span class="dot" style="background:var(--yellow)"></span> Neutral / leve</span>
+      <span><span class="dot" style="background:var(--red)"></span> Perjudicial</span>
+    </div>
+  </div>
+
+  <!-- CONSEJOS -->
+  <div class="card" id="consejos" style="display:none">
+    <h2><span class="icon">💡</span> Recomendaciones personalizadas</h2>
+    <div class="tip-list" id="tip-list"></div>
+  </div>
+
+  <p class="disclaimer">
+    Esta herramienta tiene carácter meramente educativo e informativo.<br>
+    No constituye diagnóstico médico ni sustituye la consulta con profesionales de la salud.<br>
+    Modelos basados en estudios epidemiológicos de la OMS, CDC y Lancet.
+  </p>
+
+</div>
+
+<script>
+  // ── Etiquetas de sliders ──────────────────────────────────────────────────
+  const ejercicioLabels = ['sedentario','ligero','moderado','activo','muy activo'];
+  const dietaLabels     = ['muy mala','mala','media','buena','excelente'];
+
+  document.getElementById('ejercicio').addEventListener('input', function() {
+    document.getElementById('val-ejercicio').textContent = this.value;
+    document.getElementById('lbl-ejercicio').textContent = ejercicioLabels[this.value];
+  });
+  document.getElementById('dieta').addEventListener('input', function() {
+    document.getElementById('val-dieta').textContent = this.value;
+    document.getElementById('lbl-dieta').textContent = dietaLabels[this.value];
+  });
+
+  // ── Cálculo principal ─────────────────────────────────────────────────────
+  function calcular() {
+    const edad      = parseInt(document.getElementById('edad').value) || 35;
+    const sexo      = document.getElementById('sexo').value;
+    const baseBase  = parseInt(document.getElementById('pais').value);
+    const educacion = parseInt(document.getElementById('educacion').value);
+    const peso      = parseFloat(document.getElementById('peso').value) || 70;
+    const altura    = parseFloat(document.getElementById('altura').value) / 100 || 1.70;
+    const bmi       = peso / (altura * altura);
+    const ejercicio = parseInt(document.getElementById('ejercicio').value);
+    const dieta     = parseInt(document.getElementById('dieta').value);
+    const sueno     = parseInt(document.getElementById('sueno').value);
+    const estres    = parseInt(document.getElementById('estres').value);
+    const tabaco    = parseInt(document.querySelector('input[name="tabaco"]:checked').value);
+    const alcohol   = parseInt(document.querySelector('input[name="alcohol"]:checked').value);
+    const presion   = parseInt(document.querySelector('input[name="presion"]:checked').value);
+    const diabetes  = parseInt(document.querySelector('input[name="diabetes"]:checked').value);
+    const cardio    = parseInt(document.querySelector('input[name="cardio"]:checked').value);
+    const cancer    = parseInt(document.querySelector('input[name="cancer"]:checked').value);
+    const social    = parseInt(document.querySelector('input[name="social"]:checked').value);
+
+    // Ajuste por sexo
+    let base = baseBase + (sexo === 'f' ? 5 : 0);
+
+    // ── Factores individuales (años de ajuste) ────────────────────────────
+    const factores = [];
+
+    // Tabaco
+    const tabacoDelta = [0, -2, -4, -8][tabaco];
+    factores.push({ label: 'Tabaco', delta: tabacoDelta,
+      tip: tabaco === 0 ? { cls:'good', msg:'No fumar es uno de los mayores beneficios para la longevidad.' }
+         : tabaco === 1 ? { cls:'warn', msg:'Dejar de fumar ya ha reducido el daño. Cada año sin tabaco suma.' }
+         : { cls:'bad',  msg:'Dejar de fumar puede recuperar hasta 10 años de esperanza de vida.' }
+    });
+
+    // Alcohol
+    const alcoholDelta = [0, 0, -1, -4][alcohol];
+    factores.push({ label: 'Alcohol', delta: alcoholDelta,
+      tip: alcohol <= 1 ? { cls:'good', msg:'Tu consumo de alcohol es bajo o nulo. Excelente.' }
+         : alcohol === 2 ? { cls:'warn', msg:'Un consumo moderado de alcohol puede reducir levemente la longevidad.' }
+         : { cls:'bad', msg:'El consumo excesivo de alcohol reduce significativamente la esperanza de vida.' }
+    });
+
+    // BMI
+    let bmiDelta = 0;
+    let bmiTip;
+    if (bmi < 18.5) {
+      bmiDelta = -3; bmiTip = { cls:'warn', msg:`Tu IMC es bajo (${bmi.toFixed(1)}). El bajo peso también conlleva riesgos; consulta a un nutricionista.` };
+    } else if (bmi < 25) {
+      bmiDelta = 2;  bmiTip = { cls:'good', msg:`Tu IMC es saludable (${bmi.toFixed(1)}). Mantén este rango.` };
+    } else if (bmi < 30) {
+      bmiDelta = -1; bmiTip = { cls:'warn', msg:`Tu IMC indica sobrepeso (${bmi.toFixed(1)}). Reducirlo mejora tu pronóstico.` };
+    } else if (bmi < 35) {
+      bmiDelta = -3; bmiTip = { cls:'bad',  msg:`Tu IMC indica obesidad (${bmi.toFixed(1)}). Reducir peso mejora considerablemente la salud.` };
+    } else {
+      bmiDelta = -5; bmiTip = { cls:'bad',  msg:`Tu IMC indica obesidad severa (${bmi.toFixed(1)}). Es importante abordar esto con tu médico.` };
+    }
+    factores.push({ label: `IMC (${bmi.toFixed(1)})`, delta: bmiDelta, tip: bmiTip });
+
+    // Ejercicio
+    const ejercicioDelta = [-4, -2, 0, 2, 4][ejercicio];
+    factores.push({ label: 'Actividad física', delta: ejercicioDelta,
+      tip: ejercicio >= 3 ? { cls:'good', msg:'Tu nivel de actividad física es una de las mejores inversiones en longevidad.' }
+         : ejercicio === 2 ? { cls:'warn', msg:'Aumentar a 150 min/semana de ejercicio moderado puede sumar 2-3 años más.' }
+         : { cls:'bad', msg:'El sedentarismo reduce significativamente la esperanza de vida. Incluso caminar 30 min/día ayuda.' }
+    });
+
+    // Dieta
+    const dietaDelta = [-4, -2, 0, 2, 4][dieta];
+    factores.push({ label: 'Dieta', delta: dietaDelta,
+      tip: dieta >= 3 ? { cls:'good', msg:'Una dieta de calidad protege el corazón, reduce el cáncer y mejora la longevidad.' }
+         : dieta === 2 ? { cls:'warn', msg:'Mejorar la dieta (más vegetales, legumbres, menos ultraprocesados) puede sumar años.' }
+         : { cls:'bad', msg:'Una dieta pobre es un factor de riesgo importante. Prioriza alimentos frescos y naturales.' }
+    });
+
+    // Sueño
+    factores.push({ label: 'Sueño', delta: sueno,
+      tip: sueno === 1 ? { cls:'good', msg:'7-8 horas de sueño es el rango óptimo para la longevidad.' }
+         : { cls:'warn', msg:'El sueño insuficiente o excesivo crónico se asocia a mayor mortalidad. Prioriza el descanso.' }
+    });
+
+    // Estrés
+    factores.push({ label: 'Estrés', delta: estres,
+      tip: estres >= 0 ? { cls:'good', msg:'Un nivel de estrés bajo o moderado protege la salud cardiovascular y mental.' }
+         : { cls:'warn', msg:'El estrés crónico eleva el cortisol, inflama y envejece. Técnicas de manejo del estrés ayudan.' }
+    });
+
+    // Presión arterial
+    factores.push({ label: 'Presión arterial', delta: presion,
+      tip: presion === 1  ? { cls:'good', msg:'Tensión arterial normal: excelente para el corazón y el cerebro.' }
+         : presion === 0  ? { cls:'warn', msg:'La prehipertensión puede progresar. Reduce sal, haz ejercicio y controla el estrés.' }
+         : { cls:'bad',     msg:'La hipertensión es silenciosa pero muy dañina. El tratamiento puede recuperar años de vida.' }
+    });
+
+    // Diabetes
+    factores.push({ label: 'Diabetes', delta: diabetes,
+      tip: diabetes === 0  ? { cls:'good', msg:'Sin diabetes: protege corazón, riñones y visión a largo plazo.' }
+         : diabetes === -1 ? { cls:'warn', msg:'La prediabetes es reversible con dieta y ejercicio. Actúa ahora.' }
+         : { cls:'bad',      msg:'La diabetes bien controlada reduce complicaciones. Trabaja con tu médico el manejo.' }
+    });
+
+    // Antecedentes cardiovasculares
+    factores.push({ label: 'Ant. cardiovasculares', delta: cardio,
+      tip: cardio === 0 ? { cls:'good', msg:'Sin antecedentes cardiovasculares familiares tempranos.' }
+         : { cls:'warn', msg:'Con historia familiar, los controles periódicos del corazón son especialmente importantes.' }
+    });
+
+    // Antecedentes cáncer
+    factores.push({ label: 'Ant. cáncer hereditario', delta: cancer,
+      tip: cancer === 0 ? { cls:'good', msg:'Sin antecedentes de cáncer hereditario conocidos.' }
+         : { cls:'warn', msg:'Con historia familiar de cáncer, las revisiones periódicas pueden detectar problemas a tiempo.' }
+    });
+
+    // Educación
+    factores.push({ label: 'Educación', delta: educacion,
+      tip: educacion >= 1 ? { cls:'good', msg:'Mayor nivel educativo se asocia a mejores hábitos de salud y acceso sanitario.' }
+         : { cls:'warn', msg:'La información sobre salud es accesible; el conocimiento protege la longevidad.' }
+    });
+
+    // Social
+    factores.push({ label: 'Vínculos sociales', delta: social,
+      tip: social === 1  ? { cls:'good', msg:'Las relaciones sociales fuertes son tan protectoras como no fumar.' }
+         : social === 0  ? { cls:'warn', msg:'Cultivar relaciones sociales tiene un impacto enorme en longevidad y bienestar.' }
+         : { cls:'bad',   msg:'El aislamiento social se asocia a un aumento del 29% en mortalidad. Busca conexión.' }
+    });
+
+    // ── Suma total ────────────────────────────────────────────────────────
+    const totalDelta = factores.reduce((s, f) => s + f.delta, 0);
+    const esperanza  = Math.round(base + totalDelta);
+    const restantes  = Math.max(0, esperanza - edad);
+
+    // ── Mostrar resultado ─────────────────────────────────────────────────
+    document.getElementById('resultado').style.display = 'block';
+    document.getElementById('consejos').style.display  = 'block';
+    document.getElementById('disp-edad').innerHTML =
+      `${esperanza} <span>años</span>`;
+    document.getElementById('disp-anos-restantes').textContent =
+      `Te quedan aproximadamente ${restantes} años por delante · Base ${sexo === 'f' ? '(mujer)' : '(hombre)'}: ${base} años`;
+
+    // ── Barras ────────────────────────────────────────────────────────────
+    const barsEl = document.getElementById('bars');
+    barsEl.innerHTML = '';
+    const maxAbs = Math.max(...factores.map(f => Math.abs(f.delta)), 1);
+
+    factores.forEach(f => {
+      if (f.delta === 0) return;
+      const color  = f.delta > 0 ? 'var(--green)' : f.delta >= -1 ? 'var(--yellow)' : 'var(--red)';
+      const pct    = Math.round(Math.abs(f.delta) / maxAbs * 100);
+      const sign   = f.delta > 0 ? '+' : '';
+      const div    = document.createElement('div');
+      div.className = 'factor-bar';
+      div.innerHTML = `
+        <div class="label-row">
+          <span>${f.label}</span>
+          <span style="color:${color}">${sign}${f.delta} años</span>
+        </div>
+        <div class="bar-bg">
+          <div class="bar-fill" style="width:0%;background:${color}" data-pct="${pct}"></div>
+        </div>`;
+      barsEl.appendChild(div);
+    });
+
+    // Animar barras
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      document.querySelectorAll('.bar-fill').forEach(el => {
+        el.style.width = el.dataset.pct + '%';
+      });
+    }));
+
+    // ── Consejos ──────────────────────────────────────────────────────────
+    const tipList = document.getElementById('tip-list');
+    tipList.innerHTML = '';
+    // Ordenar: bad primero, luego warn, luego good
+    const orden = { bad: 0, warn: 1, good: 2 };
+    const tips  = factores.map(f => f.tip);
+    tips.sort((a, b) => orden[a.cls] - orden[b.cls]);
+    const icons = { good: '✅', warn: '⚠️', bad: '🔴' };
+    tips.forEach(t => {
+      const d = document.createElement('div');
+      d.className = `tip ${t.cls}`;
+      d.innerHTML = `<span class="tip-icon">${icons[t.cls]}</span><span>${t.msg}</span>`;
+      tipList.appendChild(d);
+    });
+
+    // Scroll suave al resultado
+    document.getElementById('resultado').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+</script>
+</body>
+</html>
