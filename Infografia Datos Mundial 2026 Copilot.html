@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Infografía interactiva | Mundial FIFA 2026</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --card: rgba(255, 255, 255, 0.09);
+      --card-strong: rgba(255, 255, 255, 0.14);
+      --text: #f7fbff;
+      --muted: #b7c7d9;
+      --blue: #2ea8ff;
+      --green: #27d17f;
+      --red: #ff5b5b;
+      --yellow: #ffd166;
+      --purple: #a78bfa;
+      --border: rgba(255,255,255,.16);
+      --shadow: 0 24px 70px rgba(0,0,0,.35);
+      --radius: 26px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(46,168,255,.35), transparent 32%),
+        radial-gradient(circle at 88% 18%, rgba(39,209,127,.25), transparent 30%),
+        radial-gradient(circle at 50% 90%, rgba(255,91,91,.20), transparent 38%),
+        var(--bg);
+      color: var(--text);
+      padding: 28px;
+    }
+
+    .shell {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 34px;
+      box-shadow: var(--shadow);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,.05)),
+        linear-gradient(135deg, rgba(46,168,255,.18), rgba(39,209,127,.12));
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -80px -130px auto;
+      width: 360px;
+      height: 360px;
+      border-radius: 50%;
+      background: conic-gradient(from 180deg, var(--blue), var(--green), var(--yellow), var(--red), var(--blue));
+      filter: blur(18px);
+      opacity: .24;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(0,0,0,.18);
+      font-size: 13px;
+      letter-spacing: .3px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      font-size: clamp(34px, 6vw, 68px);
+      line-height: .92;
+      margin: 0;
+      max-width: 820px;
+      letter-spacing: -2.8px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      max-width: 690px;
+      font-size: 18px;
+      line-height: 1.55;
+      margin: 22px 0 0;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 26px;
+    }
+
+    button, select, input {
+      font: inherit;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: rgba(255,255,255,.09);
+      border-radius: 999px;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: .2s ease;
+    }
+
+    .btn:hover,
+    .btn.active {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.18);
+      border-color: rgba(255,255,255,.34);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .span-3 { grid-column: span 3; }
+    .span-4 { grid-column: span 4; }
+    .span-5 { grid-column: span 5; }
+    .span-6 { grid-column: span 6; }
+    .span-7 { grid-column: span 7; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+
+    .metric {
+      min-height: 165px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .metric .value {
+      font-size: 46px;
+      line-height: 1;
+      font-weight: 850;
+      letter-spacing: -1.8px;
+    }
+
+    .metric .note {
+      color: var(--muted);
+      margin-top: 10px;
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .chip {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.08);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 13px;
+      color: var(--muted);
+      margin: 4px 3px 0 0;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot.blue { background: var(--blue); }
+    .dot.green { background: var(--green); }
+    .dot.red { background: var(--red); }
+    .dot.yellow { background: var(--yellow); }
+    .dot.purple { background: var(--purple); }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 15px;
+      margin-bottom: 16px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: -.8px;
+    }
+
+    .section-title p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .host-bars {
+      display: grid;
+      gap: 14px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 110px 1fr 44px;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .bar-track {
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.11);
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: var(--w);
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--blue), var(--green));
+    }
+
+    .city-list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .city {
+      padding: 13px 14px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(255,255,255,.07);
+      transition: .2s ease;
+    }
+
+    .city:hover {
+      transform: translateY(-2px);
+      background: rgba(255,255,255,.13);
+    }
+
+    .city small {
+      color: var(--muted);
+      display: block;
+      margin-top: 3px;
+    }
+
+    .timeline {
+      position: relative;
+      display: grid;
+      gap: 14px;
+    }
+
+    .milestone {
+      display: grid;
+      grid-template-columns: 94px 1fr;
+      gap: 14px;
+      align-items: start;
+      padding: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.07);
+      border-radius: 18px;
+    }
+
+    .date {
+      font-weight: 800;
+      color: var(--yellow);
+    }
+
+    .milestone strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .milestone span {
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .format-flow {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    .flow-step {
+      min-height: 132px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.05));
+      position: relative;
+    }
+
+    .flow-step::after {
+      content: "→";
+      position: absolute;
+      right: -13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255,255,255,.5);
+      font-size: 22px;
+    }
+
+    .flow-step:last-child::after {
+      content: "";
+    }
+
+    .flow-step b {
+      font-size: 26px;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .flow-step span {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .filters {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+
+    .control {
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 13px;
+      outline: none;
+      min-width: 210px;
+    }
+
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      max-height: 420px;
+      overflow: auto;
+      padding-right: 6px;
+    }
+
+    .team {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      background: rgba(255,255,255,.07);
+    }
+
+    .team strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .team span {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .insight {
+      border-left: 4px solid var(--green);
+      background: rgba(39,209,127,.10);
+      padding: 16px 18px;
+      border-radius: 18px;
+      color: #dfffee;
+      line-height: 1.55;
+    }
+
+    .source {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .source a {
+      color: #9bd6ff;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 930px) {
+      body { padding: 16px; }
+      .span-3, .span-4, .span-5, .span-6, .span-7, .span-8, .span-12 {
+        grid-column: span 12;
+      }
+      .city-list, .team-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .format-flow {
+        grid-template-columns: 1fr;
+      }
+      .flow-step::after {
+        content: "↓";
+        right: 20px;
+        top: auto;
+        bottom: -21px;
+      }
+      .flow-step:last-child::after {
+        content: "";
+      }
+    }
+
+    @media (max-width: 560px) {
+      .hero { padding: 24px; }
+      .city-list, .team-grid {
+        grid-template-columns: 1fr;
+      }
+      .bar-row {
+        grid-template-columns: 82px 1fr 34px;
+      }
+      .milestone {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="eyebrow">⚽ Infografía interactiva · FIFA World Cup 26™</div>
+      <h1>El Mundial más grande de la historia</h1>
+      <p class="subtitle">
+        Canadá, México y Estados Unidos acogen una edición ampliada: más selecciones,
+        más partidos, más sedes y un nuevo camino hacia la final.
+      </p>
+
+      <div class="hero-actions">
+        <button class="btn active" data-view="overview">Resumen</button>
+        <button class="btn" data-view="hosts">Sedes</button>
+        <button class="btn" data-view="format">Formato</button>
+        <button class="btn" data-view="teams">Equipos</button>
+      </div>
+    </section>
+
+    <section id="overview" class="view">
+      <div class="grid">
+        <article class="card metric span-3">
+          <div class="label">Equipos participantes</div>
+          <div class="value">48</div>
+          <div class="note">Primera Copa Mundial masculina con este número de selecciones.</div>
+        </article>
+
+        <article class="card metric span-3">
+          <div class="label">Partidos</div>
+          <div class="value">104</div>
+          <div class="note">40 más que en el formato anterior de 64 partidos.</div>
+        </article>
+
+        <article class="card metric span-3">
+          <div class="label">Países anfitriones</div>
+          <div class="value">3</div>
+          <div class="note">Canadá, México y Estados Unidos comparten la organización.</div>
+        </article>
+
+        <article class="card metric span-3">
+          <div class="label">Ciudades sede</div>
+          <div class="value">16</div>
+          <div class="note">Distribuidas por Norteamérica.</div>
+        </article>
+
+        <article class="card span-7">
+          <div class="section-title">
+            <div>
+              <h2>Distribución de ciudades sede</h2>
+              <p>Visualiza el peso de cada país anfitrión dentro del mapa de sedes.</p>
+            </div>
+          </div>
+          <div class="host-bars" id="hostBars"></div>
+        </article>
+
+        <article class="card span-5">
+          <div class="section-title">
+            <div>
+              <h2>Fechas clave</h2>
+              <p>Inicio, fase principal y cierre del torneo.</p>
+            </div>
+          </div>
+          <div class="timeline">
+            <div class="milestone">
+              <div class="date">11 jun</div>
+              <div>
+                <strong>Partido inaugural</strong>
+                <span>El torneo arranca en Ciudad de México.</span>
+              </div>
+            </div>
+            <div class="milestone">
+              <div class="date">Jun-Jul</div>
+              <div>
+                <strong>Competición ampliada</strong>
+                <span>La fase de grupos da paso a una nueva ronda de 32 selecciones.</span>
+              </div>
+            </div>
+            <div class="milestone">
+              <div class="date">19 jul</div>
+              <div>
+                <strong>Final</strong>
+                <span>La final está prevista en New York New Jersey.</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card span-12">
+          <div class="insight">
+            <strong>Lectura rápida:</strong> la edición 2026 no solo crece en tamaño; cambia el modelo competitivo.
+            El campeón deberá superar una ruta más larga, con una ronda eliminatoria adicional y ocho partidos potenciales hasta levantar el trofeo.
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="hosts" class="view hidden">
+      <div class="grid">
+        <article class="card span-12">
+          <div class="section-title">
+            <div>
+              <h2>Mapa de sedes por país</h2>
+              <p>Selecciona un país para filtrar las ciudades sede.</p>
+            </div>
+            <select id="countryFilter" class="control">
+              <option value="Todos">Todos los países</option>
+              <option value="Canadá">Canadá</option>
+              <option value="México">México</option>
+              <option value="Estados Unidos">Estados Unidos</option>
+            </select>
+          </div>
+
+          <div id="cityList" class="city-list"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="format" class="view hidden">
+      <div class="grid">
+        <article class="card span-12">
+          <div class="section-title">
+            <div>
+              <h2>Cómo funciona el nuevo formato</h2>
+              <p>De 48 selecciones a una final: una ruta más amplia y exigente.</p>
+            </div>
+          </div>
+
+          <div class="format-flow">
+            <div class="flow-step">
+              <b>48</b>
+              <span>Selecciones participantes.</span>
+            </div>
+            <div class="flow-step">
+              <b>12×4</b>
+              <span>Doce grupos de cuatro equipos.</span>
+            </div>
+            <div class="flow-step">
+              <b>32</b>
+              <span>Avanzan los dos primeros de cada grupo y los ocho mejores terceros.</span>
+            </div>
+            <div class="flow-step">
+              <b>KO</b>
+              <span>Ronda de 32, octavos, cuartos, semifinales y final.</span>
+            </div>
+            <div class="flow-step">
+              <b>8</b>
+              <span>Partidos posibles para el campeón.</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="card span-6">
+          <h2 style="margin-top:0;">Comparativa rápida</h2>
+          <p class="source">
+            El salto principal está en el tamaño del torneo: de 32 a 48 equipos,
+            con más partidos y una ronda eliminatoria adicional.
+          </p>
+          <div style="margin-top:16px;">
+            <span class="chip"><span class="dot blue"></span> 48 equipos</span>
+            <span class="chip"><span class="dot green"></span> 104 partidos</span>
+            <span class="chip"><span class="dot yellow"></span> 12 grupos</span>
+            <span class="chip"><span class="dot red"></span> Ronda de 32</span>
+          </div>
+        </article>
+
+        <article class="card span-6">
+          <h2 style="margin-top:0;">Lo que cambia para el aficionado</h2>
+          <p class="source">
+            Más países representados, más ventanas de partidos y más combinaciones
+            de clasificación en fase de grupos. Para una web corporativa o de campaña,
+            este formato permite crear contenido por país, sede, grupo o fase.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section id="teams" class="view hidden">
+      <div class="grid">
+        <article class="card span-12">
+          <div class="section-title">
+            <div>
+              <h2>Equipos clasificados por confederación</h2>
+              <p>Busca una selección o filtra por confederación.</p>
+            </div>
+          </div>
+
+          <div class="filters">
+            <input id="teamSearch" class="control" type="search" placeholder="Buscar selección..." />
+            <select id="confedFilter" class="control">
+              <option value="Todas">Todas las confederaciones</option>
+            </select>
+          </div>
+
+          <div id="teamGrid" class="team-grid"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="grid">
+      <footer class="card span-12 source">
+        <strong>Fuentes:</strong>
+        datos basados en páginas informativas de FIFA sobre la Copa Mundial de la FIFA 2026™:
+        <a href="https://www.fifa.com/es/tournaments/mens/worldcup/canadamexicousa2026" target="_blank" rel="noopener noreferrer">página oficial del torneo</a>,
+        <a href="https://www.fifa.com/en/articles/article-fifa-world-cup-2026-mexico-canada-usa-new-format-tournament-football-soccer" target="_blank" rel="noopener noreferrer">formato de 48 equipos</a> y
+        <a href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/match-schedule-fixtures-results-teams-stadiums" target="_blank" rel="noopener noreferrer">calendario y sedes</a>.
+      </footer>
+    </section>
+  </main>
+
+  <script>
+    const hostCountries = [
+      {
+        country: "Canadá",
+        color: "#ff5b5b",
+        cities: ["Toronto", "Vancouver"]
+      },
+      {
+        country: "México",
+        color: "#27d17f",
+        cities: ["Guadalajara", "Mexico City", "Monterrey"]
+      },
+      {
+        country: "Estados Unidos",
+        color: "#2ea8ff",
+        cities: [
+          "Atlanta",
+          "Boston",
+          "Dallas",
+          "Houston",
+          "Kansas City",
+          "Los Angeles",
+          "Miami",
+          "New York New Jersey",
+          "Philadelphia",
+          "San Francisco Bay Area",
+          "Seattle"
+        ]
+      }
+    ];
+
+    const teams = [
+      ["Canadá", "Anfitrión"],
+      ["México", "Anfitrión"],
+      ["Estados Unidos", "Anfitrión"],
+
+      ["Australia", "AFC"],
+      ["Iraq", "AFC"],
+      ["IR Iran", "AFC"],
+      ["Japón", "AFC"],
+      ["Jordania", "AFC"],
+      ["República de Corea", "AFC"],
+      ["Qatar", "AFC"],
+      ["Arabia Saudí", "AFC"],
+      ["Uzbekistán", "AFC"],
+
+      ["Argelia", "CAF"],
+      ["Cabo Verde", "CAF"],
+      ["Congo DR", "CAF"],
+      ["Côte d'Ivoire", "CAF"],
+      ["Egipto", "CAF"],
+      ["Ghana", "CAF"],
+      ["Marruecos", "CAF"],
+      ["Senegal", "CAF"],
+      ["Sudáfrica", "CAF"],
+      ["Túnez", "CAF"],
+
+      ["Curaçao", "Concacaf"],
+      ["Haiti", "Concacaf"],
+      ["Panamá", "Concacaf"],
+
+      ["Argentina", "CONMEBOL"],
+      ["Brasil", "CONMEBOL"],
+      ["Colombia", "CONMEBOL"],
+      ["Ecuador", "CONMEBOL"],
+      ["Paraguay", "CONMEBOL"],
+      ["Uruguay", "CONMEBOL"],
+
+      ["Nueva Zelanda", "OFC"],
+
+      ["Austria", "UEFA"],
+      ["Bélgica", "UEFA"],
+      ["Bosnia y Herzegovina", "UEFA"],
+      ["Croacia", "UEFA"],
+      ["Chequia", "UEFA"],
+      ["Inglaterra", "UEFA"],
+      ["Francia", "UEFA"],
+      ["Alemania", "UEFA"],
+      ["Países Bajos", "UEFA"],
+      ["Noruega", "UEFA"],
+      ["Portugal", "UEFA"],
+      ["Escocia", "UEFA"],
+      ["España", "UEFA"],
+      ["Suecia", "UEFA"],
+      ["Suiza", "UEFA"],
+      ["Türkiye", "UEFA"]
+    ];
+
+    const buttons = document.querySelectorAll(".btn[data-view]");
+    const views = document.querySelectorAll(".view");
+
+    buttons.forEach(button => {
+      button.addEventListener("click", () => {
+        buttons.forEach(b => b.classList.remove("active"));
+        button.classList.add("active");
+
+        const target = button.dataset.view;
+        views.forEach(view => {
+          view.classList.toggle("hidden", view.id !== target);
+        });
+      });
+    });
+
+    function renderHostBars() {
+      const totalCities = hostCountries.reduce((sum, h) => sum + h.cities.length, 0);
+      const container = document.getElementById("hostBars");
+
+      container.innerHTML = hostCountries.map(host => {
+        const pct = Math.round((host.cities.length / totalCities) * 100);
+        return `
+          <div class="bar-row">
+            <strong>${host.country}</strong>
+            <div class="bar-track">
+              <div class="bar-fill" style="--w:${pct}%; background: linear-gradient(90deg, ${host.color}, #ffffff99);"></div>
+            </div>
+            <span>${host.cities.length}</span>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderCities() {
+      const filter = document.getElementById("countryFilter").value;
+      const container = document.getElementById("cityList");
+
+      const cities = hostCountries
+        .filter(host => filter === "Todos" || host.country === filter)
+        .flatMap(host => host.cities.map(city => ({
+          city,
+          country: host.country,
+          color: host.color
+        })));
+
+      container.innerHTML = cities.map(item => `
+        <div class="city">
+          <strong>${item.city}</strong>
+          <small><span class="dot" style="background:${item.color}"></span> ${item.country}</small>
+        </div>
+      `).join("");
+    }
+
+    function initConfedFilter() {
+      const select = document.getElementById("confedFilter");
+      const confeds = [...new Set(teams.map(t => t[1]))].sort();
+
+      select.innerHTML += confeds.map(c => `<option value="${c}">${c}</option>`).join("");
+    }
+
+    function renderTeams() {
+      const search = document.getElementById("teamSearch").value.trim().toLowerCase();
+      const confed = document.getElementById("confedFilter").value;
+      const grid = document.getElementById("teamGrid");
+
+      const filtered = teams.filter(([name, group]) => {
+        const matchesSearch = name.toLowerCase().includes(search);
+        const matchesConfed = confed === "Todas" || group === confed;
+        return matchesSearch && matchesConfed;
+      });
+
+      grid.innerHTML = filtered.map(([name, group]) => `
+        <div class="team">
+          <strong>${name}</strong>
+          <span>${group}</span>
+        </div>
+      `).join("");
+
+      if (!filtered.length) {
+        grid.innerHTML = `<div class="team"><strong>Sin resultados</strong><span>Prueba con otra búsqueda o filtro.</span></div>`;
+      }
+    }
+
+    document.getElementById("countryFilter").addEventListener("change", renderCities);
+    document.getElementById("teamSearch").addEventListener("input", renderTeams);
+    document.getElementById("confedFilter").addEventListener("change", renderTeams);
+
+    renderHostBars();
+    renderCities();
+    initConfedFilter();
+    renderTeams();
+  </script>
+</body>
+</html>
