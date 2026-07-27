@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El Rosco de la IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#090b14;
+    --panel:#121625;
+    --panel-2:#171c33;
+    --line:rgba(255,255,255,0.09);
+    --text:#eef1fb;
+    --muted:#8b93ad;
+    --accent:#7c5cff;
+    --accent-soft:rgba(124,92,255,0.16);
+    --ok:#14e0a4;
+    --ok-soft:rgba(20,224,164,0.16);
+    --bad:#ff4d6d;
+    --bad-soft:rgba(255,77,109,0.16);
+    --warn:#ffb703;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    position:relative;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.display{font-family:'Space Grotesk',sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  button{font-family:inherit;cursor:pointer;}
+
+  canvas#netbg{
+    position:fixed;inset:0;
+    width:100%;height:100%;
+    z-index:0;
+    opacity:0.55;
+  }
+
+  .app{
+    position:relative;
+    z-index:1;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:28px 18px 60px;
+  }
+
+  /* ---------------- top bar ---------------- */
+  .topbar{
+    width:100%;
+    max-width:920px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:26px;
+  }
+  .logo{
+    display:flex;align-items:center;gap:10px;
+    font-weight:700;letter-spacing:0.01em;font-size:1.05rem;
+  }
+  .logo .node{
+    width:14px;height:14px;border-radius:50%;
+    background:var(--accent);
+    box-shadow:0 0 12px var(--accent);
+  }
+  .badge-level{
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.72rem;
+    color:var(--accent);
+    border:1px solid var(--accent);
+    padding:5px 12px;
+    border-radius:100px;
+    display:none;
+  }
+
+  /* ---------------- start screen ---------------- */
+  .screen{width:100%;max-width:920px;}
+  .start-hero{
+    text-align:center;
+    margin-bottom:34px;
+  }
+  .start-hero .kicker{
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.75rem;letter-spacing:0.14em;text-transform:uppercase;
+    color:var(--accent);
+    display:inline-block;margin-bottom:14px;
+  }
+  .start-hero h1{
+    font-size:clamp(2rem,6vw,3rem);
+    line-height:1.08;
+  }
+  .start-hero p{
+    color:var(--muted);
+    max-width:560px;
+    margin:14px auto 0;
+    font-size:0.98rem;
+  }
+
+  .levels{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+    margin-top:34px;
+  }
+  @media (max-width:720px){ .levels{grid-template-columns:1fr;} }
+
+  .level-card{
+    background:var(--panel);
+    border:1.5px solid var(--line);
+    border-radius:16px;
+    padding:22px 20px;
+    text-align:left;
+    transition:.18s;
+    position:relative;
+  }
+  .level-card:hover{border-color:var(--accent);transform:translateY(-3px);}
+  .level-card.selected{
+    border-color:var(--accent);
+    background:linear-gradient(160deg,var(--accent-soft),var(--panel));
+    box-shadow:0 0 0 1px var(--accent) inset;
+  }
+  .level-card .lv-num{
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.72rem;color:var(--muted);letter-spacing:0.1em;
+  }
+  .level-card h3{font-size:1.3rem;margin:6px 0 8px;}
+  .level-card p{font-size:0.84rem;color:var(--muted);line-height:1.5;}
+  .level-card .meta{
+    margin-top:14px;display:flex;gap:14px;
+    font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--accent);
+  }
+  .level-card input[type="radio"]{position:absolute;opacity:0;pointer-events:none;}
+
+  .rules{
+    margin-top:30px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px 20px;
+    font-size:0.85rem;
+    color:var(--muted);
+  }
+  .rules b{color:var(--text);}
+  .rules ul{margin:10px 0 0 18px;}
+  .rules li{margin-bottom:4px;}
+
+  .cta-row{display:flex;justify-content:center;margin-top:30px;}
+  .btn-primary{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:14px 34px;
+    border-radius:100px;
+    font-weight:700;
+    font-size:0.98rem;
+    letter-spacing:0.01em;
+    transition:.18s;
+  }
+  .btn-primary:disabled{opacity:0.4;cursor:not-allowed;}
+  .btn-primary:not(:disabled):hover{background:#8f70ff;transform:translateY(-1px);}
+
+  .btn-ghost{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text);
+    padding:11px 22px;
+    border-radius:100px;
+    font-weight:600;
+    font-size:0.88rem;
+    transition:.18s;
+  }
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* ---------------- game screen ---------------- */
+  #gameScreen{display:none;}
+  .game-hud{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    margin-bottom:22px;
+    flex-wrap:wrap;
+  }
+  .hud-chip{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 16px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:0.85rem;
+  }
+  .hud-chip .num{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1.05rem;}
+  .hud-chip.ok .num{color:var(--ok);}
+  .hud-chip.bad .num{color:var(--bad);}
+  .hud-chip.time .num{color:var(--warn);}
+  .hud-chip.time.low .num{color:var(--bad);}
+
+  .timebar-track{
+    width:100%;height:6px;border-radius:6px;
+    background:var(--panel-2);
+    overflow:hidden;margin-bottom:26px;
+  }
+  .timebar-fill{
+    height:100%;
+    background:linear-gradient(90deg,var(--accent),var(--ok));
+    width:100%;
+    transition:width 1s linear;
+  }
+
+  .rosco-wrap{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:26px;
+  }
+
+  #wheel{
+    position:relative;
+    width:min(78vw,420px);
+    aspect-ratio:1/1;
+  }
+  .letter-node{
+    position:absolute;
+    width:38px;height:38px;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:0.95rem;
+    background:var(--panel);
+    border:2px solid var(--line);
+    color:var(--muted);
+    transition:.2s;
+  }
+  .letter-node.current{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+    box-shadow:0 0 0 6px var(--accent-soft);
+    transform:translate(-50%,-50%) scale(1.12);
+  }
+  .letter-node.correct{background:var(--ok);border-color:var(--ok);color:#04231a;}
+  .letter-node.wrong{background:var(--bad);border-color:var(--bad);color:#2a0410;}
+  .letter-node.passed{border-color:var(--warn);color:var(--warn);}
+
+  .wheel-center{
+    position:absolute;
+    top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    width:56%;height:56%;
+    border-radius:50%;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:10px;
+  }
+  .wheel-center .big-timer{
+    font-family:'JetBrains Mono',monospace;
+    font-size:clamp(1.4rem,5vw,1.9rem);
+    font-weight:700;
+  }
+  .wheel-center .small-label{
+    font-size:0.62rem;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    margin-top:6px;
+  }
+
+  .qa-card{
+    width:100%;
+    max-width:640px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:26px 26px 22px;
+  }
+  .qa-card .qa-kicker{
+    display:flex;align-items:center;gap:10px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.75rem;color:var(--accent);
+    text-transform:uppercase;letter-spacing:0.08em;
+    margin-bottom:12px;
+  }
+  .qa-card .qa-kicker .letter-pill{
+    width:26px;height:26px;border-radius:50%;
+    background:var(--accent);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.85rem;
+  }
+  .qa-card .clue{
+    font-size:1.12rem;
+    line-height:1.5;
+    min-height:64px;
+  }
+  .qa-feedback{
+    margin-top:10px;
+    font-size:0.85rem;
+    font-weight:600;
+    min-height:20px;
+  }
+  .qa-feedback.ok{color:var(--ok);}
+  .qa-feedback.bad{color:var(--bad);}
+
+  .qa-input-row{
+    display:flex;
+    gap:10px;
+    margin-top:18px;
+    flex-wrap:wrap;
+  }
+  .qa-input-row input{
+    flex:1 1 220px;
+    background:var(--bg);
+    border:1.5px solid var(--line);
+    color:var(--text);
+    padding:13px 16px;
+    border-radius:12px;
+    font-size:1rem;
+    outline:none;
+    transition:.15s;
+  }
+  .qa-input-row input:focus{border-color:var(--accent);}
+  .qa-input-row .btn-answer{
+    background:var(--ok);
+    color:#04231a;
+    border:none;
+    padding:0 22px;
+    border-radius:12px;
+    font-weight:700;
+  }
+  .qa-input-row .btn-skip{
+    background:transparent;
+    border:1.5px solid var(--line);
+    color:var(--text);
+    padding:0 20px;
+    border-radius:12px;
+    font-weight:600;
+  }
+  .qa-input-row .btn-skip:hover{border-color:var(--warn);color:var(--warn);}
+  .qa-input-row .btn-answer:hover{background:#0fc890;}
+
+  .end-early{
+    margin-top:18px;
+    text-align:center;
+  }
+
+  /* ---------------- results modal ---------------- */
+  .overlay{
+    position:fixed;inset:0;
+    background:rgba(4,5,10,0.72);
+    backdrop-filter:blur(4px);
+    display:none;
+    align-items:center;justify-content:center;
+    z-index:50;
+    padding:20px;
+  }
+  .overlay.show{display:flex;}
+  .modal{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:20px;
+    max-width:640px;
+    width:100%;
+    max-height:86vh;
+    overflow-y:auto;
+    padding:30px;
+  }
+  .modal h2{font-size:1.8rem;}
+  .modal .result-summary{
+    display:flex;gap:14px;margin:18px 0 22px;flex-wrap:wrap;
+  }
+  .modal .rs-chip{
+    flex:1;min-width:110px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px;
+    text-align:center;
+  }
+  .modal .rs-chip .num{font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:700;}
+  .modal .rs-chip.ok .num{color:var(--ok);}
+  .modal .rs-chip.bad .num{color:var(--bad);}
+  .modal .rs-chip.time .num{color:var(--warn);}
+  .modal .rs-chip .lbl{font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:4px;}
+
+  .review-list{margin-top:10px;}
+  .review-item{
+    display:flex;
+    gap:12px;
+    padding:10px 0;
+    border-bottom:1px solid var(--line);
+    font-size:0.85rem;
+  }
+  .review-item:last-child{border-bottom:none;}
+  .review-item .rletter{
+    flex:0 0 26px;height:26px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:0.78rem;
+  }
+  .review-item.ok .rletter{background:var(--ok-soft);color:var(--ok);}
+  .review-item.bad .rletter{background:var(--bad-soft);color:var(--bad);}
+  .review-item .rtext{color:var(--muted);}
+  .review-item .rtext b{color:var(--text);}
+
+  .modal-actions{
+    display:flex;gap:12px;justify-content:center;margin-top:24px;flex-wrap:wrap;
+  }
+
+  footer.credit{
+    margin-top:40px;
+    color:var(--muted);
+    font-size:0.75rem;
+    text-align:center;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    * { transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="netbg"></canvas>
+
+<div class="app">
+  <div class="topbar">
+    <div class="logo"><span class="node"></span> EL ROSCO DE LA IA</div>
+    <div class="badge-level" id="badgeLevel"></div>
+  </div>
+
+  <!-- ============ START SCREEN ============ -->
+  <div class="screen" id="startScreen">
+    <div class="start-hero">
+      <span class="kicker">Trivia · Inteligencia Artificial</span>
+      <h1>¿Cuánto sabes de IA?</h1>
+      <p>25 letras, 25 preguntas sobre modelos, empresas, productos y conceptos de inteligencia artificial. Elige un nivel de dificultad antes de empezar.</p>
+    </div>
+
+    <div class="levels" id="levelCards">
+      <label class="level-card" data-level="1">
+        <input type="radio" name="level" value="1">
+        <div class="lv-num">NIVEL 1</div>
+        <h3>Iniciado</h3>
+        <p>Preguntas más generales: productos y marcas de IA que suenan en cualquier noticia.</p>
+        <div class="meta"><span>⏱ 5:00</span><span>●●○</span></div>
+      </label>
+      <label class="level-card" data-level="2">
+        <input type="radio" name="level" value="2">
+        <div class="lv-num">NIVEL 2</div>
+        <h3>Intermedio</h3>
+        <p>Modelos, técnicas y compañías que sigue de cerca alguien interesado en tecnología.</p>
+        <div class="meta"><span>⏱ 4:00</span><span>●●●</span></div>
+      </label>
+      <label class="level-card" data-level="3">
+        <input type="radio" name="level" value="3">
+        <div class="lv-num">NIVEL 3</div>
+        <h3>Experto</h3>
+        <p>Conceptos técnicos, arquitecturas y datos que exigen conocimiento a fondo del sector.</p>
+        <div class="meta"><span>⏱ 3:00</span><span>●●●●</span></div>
+      </label>
+    </div>
+
+    <div class="rules">
+      <b>Cómo se juega</b>
+      <ul>
+        <li>Cada letra tiene una pista: "empieza por..." o, en el caso de la Ñ, "contiene la...".</li>
+        <li>Escribe tu respuesta y pulsa <b>Responder</b> (o Intro).</li>
+        <li>Si no lo sabes, pulsa <b>Pasapalabra</b>: la letra vuelve al final de la cola.</li>
+        <li>La partida termina cuando se acaba el tiempo o respondes las 25 letras.</li>
+      </ul>
+    </div>
+
+    <div class="cta-row">
+      <button class="btn-primary" id="startBtn" disabled>Elige un nivel para empezar</button>
+    </div>
+
+    <footer class="credit">Preguntas basadas en productos, empresas y conceptos reales del sector de la IA.</footer>
+  </div>
+
+  <!-- ============ GAME SCREEN ============ -->
+  <div class="screen" id="gameScreen">
+    <div class="game-hud">
+      <div class="hud-chip ok">✔ <span class="num" id="hudCorrect">0</span></div>
+      <div class="hud-chip bad">✘ <span class="num" id="hudWrong">0</span></div>
+      <div class="hud-chip time" id="hudTimeChip">⏱ <span class="num mono" id="hudTime">05:00</span></div>
+    </div>
+    <div class="timebar-track"><div class="timebar-fill" id="timebarFill"></div></div>
+
+    <div class="rosco-wrap">
+      <div id="wheel">
+        <div class="wheel-center">
+          <div class="big-timer mono" id="wheelTimer">05:00</div>
+          <div class="small-label" id="wheelStatus">En juego</div>
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-kicker"><span class="letter-pill" id="qLetterPill">A</span><span id="qTypeLabel">Empieza por A</span></div>
+        <div class="clue" id="qClue">Cargando pregunta…</div>
+        <div class="qa-feedback" id="qFeedback"></div>
+        <div class="qa-input-row">
+          <input type="text" id="qInput" placeholder="Escribe tu respuesta…" autocomplete="off">
+          <button class="btn-answer" id="btnAnswer">Responder</button>
+          <button class="btn-skip" id="btnSkip">Pasapalabra</button>
+        </div>
+      </div>
+
+      <div class="end-early">
+        <button class="btn-ghost" id="btnQuit">Terminar partida</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ RESULTS MODAL ============ -->
+<div class="overlay" id="resultsOverlay">
+  <div class="modal">
+    <h2 id="resultTitle">¡Partida terminada!</h2>
+    <div class="result-summary">
+      <div class="rs-chip ok"><div class="num" id="rsCorrect">0</div><div class="lbl">Aciertos</div></div>
+      <div class="rs-chip bad"><div class="num" id="rsWrong">0</div><div class="lbl">Fallos</div></div>
+      <div class="rs-chip time"><div class="num" id="rsTime">00:00</div><div class="lbl">Tiempo usado</div></div>
+    </div>
+    <div class="review-list" id="reviewList"></div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="btnPlayAgain">Jugar otra vez</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   DATOS: 25 letras x 3 niveles de dificultad
+   ============================================================ */
+const ROSCO = [
+  {letter:"A", type:"start", levels:[
+    {clue:"Empieza por A: asistente de voz de Amazon presente en los altavoces Echo.", answer:"Alexa", accepted:["alexa"]},
+    {clue:"Empieza por A: empresa de IA fundada por extrabajadores de OpenAI, creadora de Claude.", answer:"Anthropic", accepted:["anthropic"]},
+    {clue:"Empieza por A: programa de DeepMind que en 2016 venció al campeón mundial de Go, Lee Sedol.", answer:"AlphaGo", accepted:["alphago"]}
+  ]},
+  {letter:"B", type:"start", levels:[
+    {clue:"Empieza por B: chatbot de IA de Google que fue el precursor de Gemini.", answer:"Bard", accepted:["bard"]},
+    {clue:"Empieza por B: modelo de lenguaje de Google presentado en 2018 (siglas), clave en la comprensión de texto.", answer:"BERT", accepted:["bert"]},
+    {clue:"Empieza por B: algoritmo esencial para entrenar redes neuronales, que ajusta los pesos propagando el error hacia atrás.", answer:"Backpropagation", accepted:["backpropagation","retropropagacion"]}
+  ]},
+  {letter:"C", type:"start", levels:[
+    {clue:"Empieza por C: asistente de inteligencia artificial creado por Anthropic.", answer:"Claude", accepted:["claude"]},
+    {clue:"Empieza por C: herramienta de IA de Microsoft integrada en Windows, Office y Bing.", answer:"Copilot", accepted:["copilot"]},
+    {clue:"Empieza por C: técnica que hace que un modelo razone paso a paso antes de responder (en inglés, con guion).", answer:"Chain-of-thought", accepted:["chainofthought","cadenadepensamiento"]}
+  ]},
+  {letter:"D", type:"start", levels:[
+    {clue:"Empieza por D: herramienta de OpenAI que genera imágenes a partir de texto.", answer:"DALL-E", accepted:["dalle","dalle2","dalle3"]},
+    {clue:"Empieza por D: modelo de IA chino que en 2025 sorprendió por su bajo coste de entrenamiento.", answer:"DeepSeek", accepted:["deepseek"]},
+    {clue:"Empieza por D: rama de la IA basada en redes neuronales con muchas capas.", answer:"Deep learning", accepted:["deeplearning","aprendizajeprofundo"]}
+  ]},
+  {letter:"E", type:"start", levels:[
+    {clue:"Empieza por E: representación numérica de palabras o conceptos que usan los modelos de IA para 'entender' el lenguaje.", answer:"Embeddings", accepted:["embeddings","embedding"]},
+    {clue:"Empieza por E: colectivo de investigación abierta que creó modelos como GPT-Neo y GPT-J.", answer:"EleutherAI", accepted:["eleutherai"]},
+    {clue:"Empieza por E: campo que estudia los sesgos, la equidad y el impacto social de los sistemas de IA.", answer:"Ética de la IA", accepted:["eticadelaia","etica"]}
+  ]},
+  {letter:"F", type:"start", levels:[
+    {clue:"Empieza por F: proceso de ajustar un modelo ya entrenado con datos específicos para una tarea concreta.", answer:"Fine-tuning", accepted:["finetuning"]},
+    {clue:"Empieza por F: modelo de generación de imágenes de código abierto lanzado en 2024 por Black Forest Labs.", answer:"Flux", accepted:["flux"]},
+    {clue:"Empieza por F: término que designa a un modelo entrenado con enormes cantidades de datos, adaptable a múltiples tareas (2 palabras).", answer:"Foundation model", accepted:["foundationmodel","modelofundacional"]}
+  ]},
+  {letter:"G", type:"start", levels:[
+    {clue:"Empieza por G: asistente de IA de Google, sucesor de Bard.", answer:"Gemini", accepted:["gemini"]},
+    {clue:"Empieza por G: siglas del tipo de modelo detrás de ChatGPT (Generative Pre-trained ___).", answer:"GPT", accepted:["gpt","generativepretrainedtransformer"]},
+    {clue:"Empieza por G: chatbot de la empresa xAI, integrado en la red social X.", answer:"Grok", accepted:["grok"]}
+  ]},
+  {letter:"H", type:"start", levels:[
+    {clue:"Empieza por H: plataforma y comunidad donde se comparten miles de modelos de IA de código abierto.", answer:"Hugging Face", accepted:["huggingface"]},
+    {clue:"Empieza por H: apellido del investigador considerado 'padrino de la IA', premio Nobel de Física en 2024.", answer:"Hinton", accepted:["hinton","geoffreyhinton"]},
+    {clue:"Empieza por H: modelo en el que una persona supervisa y corrige las decisiones de la IA (en inglés, 'humano en el bucle').", answer:"Human-in-the-loop", accepted:["humanintheloop"]}
+  ]},
+  {letter:"I", type:"start", levels:[
+    {clue:"Empieza por I: nombre general, en español, de la tecnología detrás de ChatGPT, Claude o Gemini.", answer:"Inteligencia Artificial", accepted:["inteligenciaartificial","ia"]},
+    {clue:"Empieza por I: empresa creadora del asistente Watson, pionera en IA empresarial.", answer:"IBM", accepted:["ibm"]},
+    {clue:"Empieza por I: proceso de generar una respuesta con un modelo ya entrenado, sin volver a entrenarlo (en inglés).", answer:"Inferencia", accepted:["inferencia","inference"]}
+  ]},
+  {letter:"J", type:"start", levels:[
+    {clue:"Empieza por J: plataforma de IA generativa especializada en marketing y redacción de contenidos.", answer:"Jasper", accepted:["jasper","jasperai"]},
+    {clue:"Empieza por J: fundador y CEO de NVIDIA, la empresa de chips clave para entrenar IA.", answer:"Jensen Huang", accepted:["jensenhuang","jensen"]},
+    {clue:"Empieza por J: rama de la ética de la IA que estudia los sesgos y la equidad de los algoritmos.", answer:"Justicia algorítmica", accepted:["justiciaalgoritmica"]}
+  ]},
+  {letter:"L", type:"start", levels:[
+    {clue:"Empieza por L: modelo de lenguaje de código abierto de Meta, alternativa a GPT.", answer:"Llama", accepted:["llama"]},
+    {clue:"Empieza por L: siglas que designan a los grandes modelos de lenguaje como ChatGPT, Claude o Gemini.", answer:"LLM", accepted:["llm","largelanguagemodel"]},
+    {clue:"Empieza por L: apellido del científico jefe de IA de Meta, premio Turing 2018 junto a Hinton y Bengio.", answer:"LeCun", accepted:["lecun","yannlecun"]}
+  ]},
+  {letter:"M", type:"start", levels:[
+    {clue:"Empieza por M: empresa dueña de Instagram y WhatsApp, creadora de los modelos Llama.", answer:"Meta", accepted:["meta"]},
+    {clue:"Empieza por M: startup francesa creadora de modelos abiertos como Mixtral.", answer:"Mistral", accepted:["mistral","mistralai"]},
+    {clue:"Empieza por M: arquitectura que activa solo una parte de la red neuronal en cada consulta, usada por modelos como Mixtral (siglas en inglés).", answer:"Mixture of Experts", accepted:["mixtureofexperts","moe"]}
+  ]},
+  {letter:"N", type:"start", levels:[
+    {clue:"Empieza por N: empresa fabricante de las GPU imprescindibles para entrenar modelos de IA.", answer:"NVIDIA", accepted:["nvidia"]},
+    {clue:"Empieza por N: tipo de red que imita el funcionamiento de las neuronas del cerebro (en inglés).", answer:"Neural network", accepted:["neuralnetwork","redneuronal"]},
+    {clue:"Empieza por N: campo de la IA dedicado a que las máquinas comprendan y generen lenguaje humano (siglas NLP).", answer:"Natural Language Processing", accepted:["naturallanguageprocessing","nlp","procesamientodellenguajenatural"]}
+  ]},
+  {letter:"Ñ", type:"contains", levels:[
+    {clue:"Contiene la Ñ: factor clave en la potencia de un modelo de IA, medido en miles de millones de parámetros.", answer:"Tamaño", accepted:["tamano"]},
+    {clue:"Contiene la Ñ: país donde nació ALIA, el proyecto de IA soberana impulsado por el Gobierno.", answer:"España", accepted:["espana"]},
+    {clue:"Contiene la Ñ: sinónimo de 'rendimiento', término usado para evaluar qué tan bien funciona un modelo en una tarea.", answer:"Desempeño", accepted:["desempeno"]}
+  ]},
+  {letter:"O", type:"start", levels:[
+    {clue:"Empieza por O: empresa creadora de ChatGPT, GPT-4 y el modelo o1.", answer:"OpenAI", accepted:["openai"]},
+    {clue:"Empieza por O: modelo de razonamiento de OpenAI lanzado en 2024, centrado en 'pensar' antes de responder.", answer:"o1", accepted:["o1","openaio1"]},
+    {clue:"Empieza por O: filosofía de desarrollo en la que el código o los pesos de un modelo son públicos y modificables por cualquiera.", answer:"Open source", accepted:["opensource","codigoabierto"]}
+  ]},
+  {letter:"P", type:"start", levels:[
+    {clue:"Empieza por P: instrucción o texto que se da a una IA generativa para obtener una respuesta.", answer:"Prompt", accepted:["prompt"]},
+    {clue:"Empieza por P: motor de búsqueda conversacional basado en IA, alternativa a Google.", answer:"Perplexity", accepted:["perplexity"]},
+    {clue:"Empieza por P: fase inicial del entrenamiento de un modelo con enormes cantidades de datos genéricos, antes del ajuste fino.", answer:"Preentrenamiento", accepted:["preentrenamiento","pretraining"]}
+  ]},
+  {letter:"Q", type:"start", levels:[
+    {clue:"Empieza por Q: familia de modelos de lenguaje de código abierto desarrollada por Alibaba.", answer:"Qwen", accepted:["qwen"]},
+    {clue:"Empieza por Q: tipo de computación experimental que promete acelerar el entrenamiento de la IA en el futuro.", answer:"Computación cuántica", accepted:["computacioncuantica","quantumcomputing"]},
+    {clue:"Empieza por Q: empresa de chips que fabrica procesadores con NPU (unidad de procesamiento neuronal) para IA en smartphones.", answer:"Qualcomm", accepted:["qualcomm"]}
+  ]},
+  {letter:"R", type:"start", levels:[
+    {clue:"Empieza por R: siglas de la técnica que permite a un modelo de IA consultar documentos externos antes de responder.", answer:"RAG", accepted:["rag","retrievalaugmentedgeneration"]},
+    {clue:"Empieza por R: tipo de aprendizaje en el que un agente de IA aprende mediante prueba, error y recompensas.", answer:"Aprendizaje por refuerzo", accepted:["aprendizajeporrefuerzo","reinforcementlearning"]},
+    {clue:"Empieza por R: capacidad de un modelo para resolver un problema paso a paso antes de dar una respuesta final, clave en modelos como o1 o DeepSeek-R1.", answer:"Razonamiento", accepted:["razonamiento","reasoning"]}
+  ]},
+  {letter:"S", type:"start", levels:[
+    {clue:"Empieza por S: herramienta de OpenAI para generar vídeos a partir de texto, presentada en 2024.", answer:"Sora", accepted:["sora"]},
+    {clue:"Empieza por S: modelo de generación de imágenes de código abierto creado por Stability AI.", answer:"Stable Diffusion", accepted:["stablediffusion"]},
+    {clue:"Empieza por S: hipotético punto en el que la IA superaría la inteligencia humana en todas las áreas.", answer:"Singularidad", accepted:["singularidad","singularity"]}
+  ]},
+  {letter:"T", type:"start", levels:[
+    {clue:"Empieza por T: unidad mínima de texto (palabra o fragmento de palabra) que procesa un modelo de lenguaje.", answer:"Token", accepted:["token"]},
+    {clue:"Empieza por T: arquitectura de red neuronal presentada en 2017 en el paper 'Attention is all you need', base de los LLM actuales.", answer:"Transformer", accepted:["transformer"]},
+    {clue:"Empieza por T: prueba propuesta por Alan Turing en 1950 para evaluar si una máquina exhibe un comportamiento inteligente indistinguible del humano.", answer:"Test de Turing", accepted:["testdeturing","turingtest"]}
+  ]},
+  {letter:"U", type:"start", levels:[
+    {clue:"Empieza por U: tipo de aprendizaje en el que un modelo encuentra patrones en datos sin etiquetas ni supervisión (en inglés).", answer:"Unsupervised learning", accepted:["unsupervisedlearning","aprendizajenosupervisado"]},
+    {clue:"Empieza por U: sensación de rechazo que provocan los avatares o robots generados por IA cuando son casi, pero no del todo, realistas (en inglés, 2 palabras).", answer:"Uncanny valley", accepted:["uncannyvalley","vallcinquietante","valleinquietante"]},
+    {clue:"Empieza por U: arquitectura de red neuronal en forma de 'U', base de muchos modelos de difusión de imágenes como Stable Diffusion.", answer:"U-Net", accepted:["unet"]}
+  ]},
+  {letter:"V", type:"start", levels:[
+    {clue:"Empieza por V: modelo de generación de vídeo con IA presentado por Google en 2024.", answer:"Veo", accepted:["veo"]},
+    {clue:"Empieza por V: campo de la IA que permite a las máquinas interpretar imágenes y vídeos.", answer:"Visión artificial", accepted:["visionartificial","computervision"]},
+    {clue:"Empieza por V: una de las '3 V' del Big Data que alimenta a los modelos de IA, referida a la cantidad de datos.", answer:"Volumen", accepted:["volumen","volume"]}
+  ]},
+  {letter:"X", type:"start", levels:[
+    {clue:"Empieza por X: empresa de inteligencia artificial fundada por Elon Musk en 2023, creadora de Grok.", answer:"xAI", accepted:["xai"]},
+    {clue:"Empieza por X: red social, antes llamada Twitter, propiedad de Elon Musk, donde está integrado Grok.", answer:"X", accepted:["x","twitter"]},
+    {clue:"Empieza por X: medio de comunicación tecnológico español muy popular que cubre a diario noticias sobre IA.", answer:"Xataka", accepted:["xataka"]}
+  ]},
+  {letter:"Y", type:"start", levels:[
+    {clue:"Empieza por Y: familia de modelos de lenguaje de código abierto creada por la startup china 01.AI.", answer:"Yi", accepted:["yi"]},
+    {clue:"Empieza por Y: buscador ruso que desarrolla su propia familia de modelos de IA, YandexGPT.", answer:"Yandex", accepted:["yandex"]},
+    {clue:"Empieza por Y: nombre de pila del científico jefe de IA de Meta, apellido LeCun.", answer:"Yann", accepted:["yann"]}
+  ]},
+  {letter:"Z", type:"start", levels:[
+    {clue:"Empieza por Z: capacidad de un modelo de IA para realizar una tarea sin haber visto ningún ejemplo previo de ella (en inglés, con guion).", answer:"Zero-shot", accepted:["zeroshot"]},
+    {clue:"Empieza por Z: plataforma de automatización que permite conectar aplicaciones y añadir pasos de IA sin programar.", answer:"Zapier", accepted:["zapier"]},
+    {clue:"Empieza por Z: apellido del fundador y CEO de Meta, impulsor de los modelos Llama.", answer:"Zuckerberg", accepted:["zuckerberg","markzuckerberg"]}
+  ]}
+];
+
+const TIME_BY_LEVEL = {1:300, 2:240, 3:180};
+
+/* ============================================================
+   ESTADO DEL JUEGO
+   ============================================================ */
+let selectedLevel = null;
+let queue = [];          // índices de ROSCO pendientes, en orden de turno
+let results = {};        // letter -> 'correct' | 'wrong'
+let currentIndex = null; // índice actual en ROSCO
+let timeLeft = 0;
+let totalTime = 0;
+let timerId = null;
+let wheelNodes = {};     // letter -> DOM node
+
+/* ============================================================
+   UTILIDADES
+   ============================================================ */
+function normalize(s){
+  return s.toString().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]/g,'');
+}
+function formatTime(sec){
+  const m = Math.floor(sec/60).toString().padStart(2,'0');
+  const s = Math.floor(sec%60).toString().padStart(2,'0');
+  return m+":"+s;
+}
+
+/* ============================================================
+   SELECCIÓN DE NIVEL (pantalla inicio)
+   ============================================================ */
+const levelCards = document.querySelectorAll('.level-card');
+const startBtn = document.getElementById('startBtn');
+levelCards.forEach(card => {
+  card.addEventListener('click', () => {
+    levelCards.forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    card.querySelector('input').checked = true;
+    selectedLevel = parseInt(card.dataset.level, 10);
+    startBtn.disabled = false;
+    startBtn.textContent = "Comenzar partida · Nivel " + selectedLevel;
+  });
+});
+
+startBtn.addEventListener('click', startGame);
+
+/* ============================================================
+   CONSTRUCCIÓN DEL ROSCO (círculo de letras)
+   ============================================================ */
+function buildWheel(){
+  const wheel = document.getElementById('wheel');
+  wheel.querySelectorAll('.letter-node').forEach(n => n.remove());
+  wheelNodes = {};
+  const n = ROSCO.length;
+  const radius = 46; // % del contenedor
+  ROSCO.forEach((item, i) => {
+    const angle = (i / n) * 2 * Math.PI - Math.PI/2;
+    const x = 50 + radius * Math.cos(angle);
+    const y = 50 + radius * Math.sin(angle);
+    const node = document.createElement('div');
+    node.className = 'letter-node';
+    node.style.left = x + '%';
+    node.style.top = y + '%';
+    node.textContent = item.letter;
+    wheel.appendChild(node);
+    wheelNodes[item.letter] = node;
+  });
+}
+
+/* ============================================================
+   LÓGICA DE PARTIDA
+   ============================================================ */
+function startGame(){
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('gameScreen').style.display = 'block';
+  const badge = document.getElementById('badgeLevel');
+  badge.style.display = 'inline-block';
+  badge.textContent = 'NIVEL ' + selectedLevel;
+
+  buildWheel();
+
+  queue = ROSCO.map((_, i) => i);
+  results = {};
+  totalTime = TIME_BY_LEVEL[selectedLevel];
+  timeLeft = totalTime;
+
+  document.getElementById('hudCorrect').textContent = '0';
+  document.getElementById('hudWrong').textContent = '0';
+  updateTimeDisplay();
+
+  showCurrentQuestion();
+
+  clearInterval(timerId);
+  timerId = setInterval(tick, 1000);
+}
+
+function tick(){
+  timeLeft--;
+  updateTimeDisplay();
+  if(timeLeft <= 0){
+    clearInterval(timerId);
+    endGame('time');
+  }
+}
+
+function updateTimeDisplay(){
+  const txt = formatTime(Math.max(timeLeft,0));
+  document.getElementById('hudTime').textContent = txt;
+  document.getElementById('wheelTimer').textContent = txt;
+  const pct = Math.max(0, (timeLeft/totalTime)*100);
+  document.getElementById('timebarFill').style.width = pct + '%';
+  const chip = document.getElementById('hudTimeChip');
+  if(timeLeft <= 30) chip.classList.add('low'); else chip.classList.remove('low');
+}
+
+function showCurrentQuestion(){
+  if(queue.length === 0){ endGame('done'); return; }
+  currentIndex = queue[0];
+  const item = ROSCO[currentIndex];
+  const lvl = item.levels[selectedLevel - 1];
+
+  Object.values(wheelNodes).forEach(node => node.classList.remove('current'));
+  wheelNodes[item.letter].classList.add('current');
+
+  document.getElementById('qLetterPill').textContent = item.letter;
+  document.getElementById('qTypeLabel').textContent = item.type === 'contains' ? 'Contiene la ' + item.letter : 'Empieza por ' + item.letter;
+  document.getElementById('qClue').textContent = lvl.clue;
+  document.getElementById('qFeedback').textContent = '';
+  document.getElementById('qFeedback').className = 'qa-feedback';
+
+  const input = document.getElementById('qInput');
+  input.value = '';
+  input.focus();
+
+  document.getElementById('btnSkip').disabled = queue.length <= 1;
+}
+
+function submitAnswer(){
+  if(currentIndex === null) return;
+  const item = ROSCO[currentIndex];
+  const lvl = item.levels[selectedLevel - 1];
+  const input = document.getElementById('qInput');
+  const val = normalize(input.value);
+
+  if(val.length === 0){
+    passLetter();
+    return;
+  }
+
+  const isCorrect = lvl.accepted.includes(val);
+  const feedback = document.getElementById('qFeedback');
+
+  if(isCorrect){
+    feedback.textContent = '¡Correcto! ✔';
+    feedback.className = 'qa-feedback ok';
+    wheelNodes[item.letter].classList.remove('current','passed');
+    wheelNodes[item.letter].classList.add('correct');
+    results[item.letter] = 'correct';
+    document.getElementById('hudCorrect').textContent = countResults('correct');
+  }else{
+    feedback.textContent = 'Fallo. La respuesta era: ' + lvl.answer;
+    feedback.className = 'qa-feedback bad';
+    wheelNodes[item.letter].classList.remove('current','passed');
+    wheelNodes[item.letter].classList.add('wrong');
+    results[item.letter] = 'wrong';
+    document.getElementById('hudWrong').textContent = countResults('wrong');
+  }
+
+  queue.shift();
+  setTimeout(() => showCurrentQuestion(), 550);
+}
+
+function passLetter(){
+  if(currentIndex === null || queue.length <= 1) return;
+  const item = ROSCO[currentIndex];
+  wheelNodes[item.letter].classList.remove('current');
+  wheelNodes[item.letter].classList.add('passed');
+  queue.push(queue.shift());
+  showCurrentQuestion();
+}
+
+function countResults(type){
+  return Object.values(results).filter(r => r === type).length;
+}
+
+function endGame(reason){
+  clearInterval(timerId);
+  document.getElementById('wheelStatus').textContent = 'Terminado';
+
+  const correct = countResults('correct');
+  const wrong = countResults('wrong');
+  const used = totalTime - Math.max(timeLeft,0);
+
+  document.getElementById('resultTitle').textContent =
+    reason === 'time' ? '¡Se acabó el tiempo!' : '¡Rosco completado!';
+  document.getElementById('rsCorrect').textContent = correct;
+  document.getElementById('rsWrong').textContent = wrong;
+  document.getElementById('rsTime').textContent = formatTime(used);
+
+  const reviewList = document.getElementById('reviewList');
+  reviewList.innerHTML = '';
+  ROSCO.forEach(item => {
+    const state = results[item.letter]; // 'correct' | 'wrong' | undefined (sin responder)
+    const lvl = item.levels[selectedLevel - 1];
+    const row = document.createElement('div');
+    row.className = 'review-item ' + (state === 'correct' ? 'ok' : 'bad');
+    row.innerHTML = `
+      <div class="rletter">${item.letter}</div>
+      <div class="rtext">${state === 'correct' ? 'Acertaste' : (state === 'wrong' ? 'Fallaste' : 'Sin responder')} · Respuesta: <b>${lvl.answer}</b></div>
+    `;
+    reviewList.appendChild(row);
+  });
+
+  document.getElementById('resultsOverlay').classList.add('show');
+}
+
+/* ============================================================
+   EVENTOS DE LA PARTIDA
+   ============================================================ */
+document.getElementById('btnAnswer').addEventListener('click', submitAnswer);
+document.getElementById('btnSkip').addEventListener('click', passLetter);
+document.getElementById('qInput').addEventListener('keydown', e => {
+  if(e.key === 'Enter'){ e.preventDefault(); submitAnswer(); }
+});
+document.getElementById('btnQuit').addEventListener('click', () => endGame('quit'));
+
+document.getElementById('btnPlayAgain').addEventListener('click', () => {
+  document.getElementById('resultsOverlay').classList.remove('show');
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('startScreen').style.display = 'block';
+  document.getElementById('badgeLevel').style.display = 'none';
+  levelCards.forEach(c => c.classList.remove('selected'));
+  selectedLevel = null;
+  startBtn.disabled = true;
+  startBtn.textContent = 'Elige un nivel para empezar';
+});
+
+/* ============================================================
+   FONDO: red neuronal animada (canvas)
+   ============================================================ */
+(function netBackground(){
+  const canvas = document.getElementById('netbg');
+  const ctx = canvas.getContext('2d');
+  let w, h, particles;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function resize(){
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  function init(){
+    resize();
+    const count = Math.min(70, Math.floor((w*h)/22000));
+    particles = Array.from({length: count}, () => ({
+      x: Math.random()*w, y: Math.random()*h,
+      vx: (Math.random()-0.5)*0.35, vy: (Math.random()-0.5)*0.35
+    }));
+  }
+  function step(){
+    ctx.clearRect(0,0,w,h);
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if(p.x < 0 || p.x > w) p.vx *= -1;
+      if(p.y < 0 || p.y > h) p.vy *= -1;
+    });
+    for(let i=0;i<particles.length;i++){
+      for(let j=i+1;j<particles.length;j++){
+        const a = particles[i], b = particles[j];
+        const d = Math.hypot(a.x-b.x, a.y-b.y);
+        if(d < 130){
+          ctx.strokeStyle = `rgba(124,92,255,${1 - d/130})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+          ctx.stroke();
+        }
+      }
+    }
+    particles.forEach(p => {
+      ctx.fillStyle = 'rgba(124,92,255,0.9)';
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,1.8,0,Math.PI*2);
+      ctx.fill();
+    });
+    if(!reduced) requestAnimationFrame(step);
+  }
+  window.addEventListener('resize', () => { init(); });
+  init();
+  if(reduced){ step(); } else { requestAnimationFrame(step); }
+})();
+</script>
+</body>
+</html>
